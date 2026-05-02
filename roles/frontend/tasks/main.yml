@@ -1,0 +1,52 @@
+- name: Open frontend port on firewall
+  ufw:
+    rule: allow
+    port: "{{ frontend_port }}"
+    proto: tcp
+
+- name: Create frontend app directory on node
+  file:
+    path: /app/frontend
+    state: directory
+    mode: '0755'
+
+- name: Copy frontend source code to node
+  copy:
+    src: "{{ playbook_dir }}/fe/"
+    dest: /app/frontend/
+    mode: '0644'
+
+- name: Render config.js from template
+  template:
+    src: config.js.j2
+    dest: /app/frontend/config.js
+    mode: '0644'
+
+- name: Render docker-compose.yml from template
+  template:
+    src: docker-compose.yml.j2
+    dest: /app/frontend/docker-compose.yml
+    mode: '0644'
+
+- name: Run Docker Compose frontend
+  shell: docker-compose up -d --build
+  args:
+    chdir: /app/frontend
+
+- name: Wait for frontend to be ready
+  wait_for:
+    port: "{{ frontend_port }}"
+    host: localhost
+    delay: 5
+    timeout: 60
+
+- name: Health check frontend
+  uri:
+    url: "http://localhost:{{ frontend_port }}/"
+    method: GET
+    status_code: 200
+  register: health_result
+
+- name: Print health check result
+  debug:
+    msg: "Frontend is UP! Status: {{ health_result.status }}"

@@ -1,0 +1,14 @@
+- hosts: all
+  become: yes
+  roles:
+    - docker
+
+- hosts: group2 
+  become: yes 
+  roles: 
+   - backend
+
+- hosts: frontend
+  become: yes
+  roles:
+    - frontend
