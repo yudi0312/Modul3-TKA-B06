@@ -1,0 +1,49 @@
+- name: Create backend app directory on node
+  file:
+    path: /app/backend
+    state: directory
+    mode: '0755'
+
+- name: Copy backend source code to node
+  copy:
+    src: "{{ playbook_dir }}/be/"
+    dest: /app/backend/
+    mode: '0644'
+
+- name: Render .env file from template
+  template:
+    src: .env.j2
+    dest: /app/backend/.env
+    mode: '0600'
+
+- name: Render docker-compose.yml from template
+  template:
+    src: docker-compose.yml.j2
+    dest: /app/backend/docker-compose.yml
+    mode: '0644'
+
+- name: Run Docker Compose (build & start)
+  shell: docker-compose up -d --build
+  args:
+    chdir: /app/backend
+
+- name: Wait for backend to be ready
+  wait_for:
+    port: "{{ backend_port }}"
+    host: 127.0.0.1
+    delay: 10
+    timeout: 60
+
+- name: Health check backend
+  uri:
+    url: "http://localhost:{{ backend_port }}/"
+    method: GET
+    status_code: 200
+  register: health_result
+  retries: 10
+  delay: 5
+  until: health_result.status == 200
+
+- name: Print health check result
+  debug:
+    msg: "{{ health_result.json.message }}"

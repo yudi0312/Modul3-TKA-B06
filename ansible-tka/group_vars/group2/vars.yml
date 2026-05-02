@@ -1,0 +1,3 @@
+db_name: tka_db
+db_username: tka_user
+backend_port: 3000

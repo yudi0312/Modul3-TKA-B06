@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: {{ db_username }}
+      POSTGRES_PASSWORD: {{ db_password }}
+      POSTGRES_DB: {{ db_name }}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: /app/backend
+      dockerfile: Dockerfile
+      network: host          # ← Tambahkan ini agar npm install bisa akses internet
+    container_name: backend
+    ports:
+      - "{{ backend_port }}:{{ backend_port }}"
+    env_file:
+      - /app/backend/.env
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  pgdata:

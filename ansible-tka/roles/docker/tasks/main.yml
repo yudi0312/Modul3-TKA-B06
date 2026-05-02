@@ -1,0 +1,30 @@
+- name: Install Docker
+  apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+
+- name: Configure Docker DNS
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "dns": ["8.8.8.8", "8.8.4.4"]
+      }
+  notify: Restart Docker
+
+- name: Start Docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Allow SSH only
+  ufw:
+    rule: allow
+    port: 22
+    proto: tcp
+
+- name: Enable firewall
+  ufw:
+    state: enabled
